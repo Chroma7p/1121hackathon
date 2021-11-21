@@ -2,8 +2,6 @@
 from discord.ext import commands,tasks
 import datetime as dt
 ty=dt.datetime.today().year
-REMIND_TIME="16:48"
-
 def str2day(s):
     ns=f"{ty}/"+s
     try:
@@ -13,6 +11,13 @@ def str2day(s):
     return tdt
 
 
+def user_data(ctx):
+    if ctx.author.id not in users:
+        usr=user(ctx.author.id,ctx.author)
+        users[ctx.author.id]=usr
+        return usr
+    else:
+        return users[ctx.author.id]
 
 
 users=dict()
@@ -24,6 +29,8 @@ class user():
         self.tasks=dict()
         self.task_num=1
         self.remind="08:00"
+        self.done_task=0
+
 
     def add_task(self,contents, day):
         tid=self.task_num
@@ -47,7 +54,15 @@ class user():
             return "input number!"
         if tid not in self.tasks:
             return f"not found taskID:{tid}"
-        return "removed! : "+self.tasks.pop(tid).task_info()+"\n***congrats!***"
+        self.done_task+=1
+        return "**You did it!**  : "+self.tasks.pop(tid).task_info()+"\n***congrats!***"
+
+    def profile(self):
+        out=""
+        out+=f"name:{self.name}\n"
+        out+=f"remaining task:{len(self.tasks)}\n"
+        out+=f"finished task:{self.done_task}"
+        return out
 
     
 
@@ -83,36 +98,30 @@ class taskcog(commands.Cog,name="task"):
     @commands.command(description="add_task")
     async def newtask(self,ctx,contents,day):
         nd=str2day(day)
-        uid=ctx.author.id
-        if uid not in users:
-            usr=user(uid,ctx.author)
-            users[uid]=usr
-        else:
-            usr=users[uid]
+        usr=user_data(ctx)
         tid=usr.add_task(contents,nd)
         await ctx.send("added!  :  "+usr.tasks[tid].task_info())
         
 
     @commands.command(description="task_list")
     async def tasklist(self,ctx):
-        usr=users[ctx.author.id]
+        usr=user_data(ctx)
         await ctx.send(usr.user_tasks())
 
     @commands.command(description="remove_task")
     async def done(self,ctx,tid):
-        usr=users[ctx.author.id]
+        usr=user_data(ctx)
+        await ctx.message.add_reaction("\U0001F973")
+        await ctx.message.add_reaction("\U0001F44D")
         await ctx.send(usr.remove_task(tid))
 
 
     @tasks.loop(seconds=60)
     async def reminder(self):
-        
-        # 現在の時刻
         now = dt.datetime.now().strftime('%H:%M')
         today =dt.datetime.today().date()
         print(now)
         for uid in users.keys():
-            
             usr=users[uid]
             if now==usr.remind:
                 tsks=usr.tasks
@@ -132,7 +141,7 @@ class taskcog(commands.Cog,name="task"):
 
     @commands.command(description="set_remind")
     async def set_remind(self,ctx,tim):
-        usr=users[ctx.author.id]
+        usr=user_data(ctx)
         try:
             dt.datetime.strptime(tim,"%H:%M")
             usr.remind=tim
@@ -140,6 +149,11 @@ class taskcog(commands.Cog,name="task"):
             await ctx.send(f"remind time set to {usr.remind}!")
         except:
             await ctx.send("input time(HH:MM)")
+
+    @commands.command(description="set_remind")
+    async def profile(self,ctx):
+        usr=user_data(ctx)
+        await ctx.send(usr.profile())
             
 
 
