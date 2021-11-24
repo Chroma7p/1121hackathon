@@ -1,23 +1,24 @@
 
 import discord
-import textwrap
-from discord.ext import commands,tasks
-import datetime
+from discord.ext import commands
 
+
+#botの設定
 bot=commands.Bot(command_prefix='!')
+
+#コグのフォルダの位置
 cogfolder="cogs."
-cogs=["checkcog",
+#コグのリスト
+cogs=[#"checkcog",#デバッグ用コグ
       "taskcog"]
 
 
-
+#各コグの読み込み
 for c in cogs:
   bot.load_extension(cogfolder+c)
 
-tc=bot.get_cog("taskcog")
 
-
-
+#discordbotのトークン読み込み(GitHubにトークン上げないため)
 with open("token.txt","r")as f:
   TOKEN=f.read().replace("\n","")
 
@@ -25,11 +26,12 @@ with open("token.txt","r")as f:
 
 
 
-
+#起動時の設定
 @bot.event
 async def on_ready():
     print("Hello!")
-    await bot.change_presence(activity=discord.Game(name="test", type=1))
+    await bot.change_presence(activity=discord.Game(name="test", type=1))#activityでXXをプレイ中って出せる
 
 
+#起動
 bot.run(TOKEN)
